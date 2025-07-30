@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonymous Chat</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #6a11cb;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .chat-area {
+            height: 400px;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 18px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .received {
+            background-color: #e5e5ea;
+            color: black;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .sent {
+            background-color: #6a11cb;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background-color: white;
+            border-top: 1px solid #eee;
+        }
+
+        #message-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        #send-button {
+            background-color: #6a11cb;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        #send-button:hover {
+            background-color: #4d0d9e;
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .disconnect-btn {
+            background-color: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            margin-top: 10px;
+            cursor: pointer;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            Anonymous Chat
+            <button id="disconnect-btn" class="disconnect-btn">Disconnect</button>
+        </div>
+        <div class="status" id="status">Looking for a partner...</div>
+        <div class="chat-area" id="chat-area"></div>
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Type your message..." disabled>
+            <button id="send-button" disabled>Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock user data (in a real app, this would be handled by a server)
+        const users = [];
+        let currentPartner = null;
+        let currentUser = null;
+
+        // DOM elements
+        const chatArea = document.getElementById('chat-area');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const statusElement = document.getElementById('status');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+
+        // Generate a random user ID and name
+        function generateRandomUser() {
+            const adjectives = ['Mysterious', 'Anonymous', 'Secret', 'Hidden', 'Unknown', 'Silent', 'Quiet', 'Shadow'];
+            const nouns = ['Stranger', 'User', 'Person', 'Visitor', 'Chatter', 'Talker', 'Listener', 'Friend'];
+            
+            const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+            
+            return {
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                name: `${randomAdj} ${randomNoun}`,
+                partner: null
+            };
+        }
+
+        // Connect to chat
+        function connectToChat() {
+            currentUser = generateRandomUser();
+            users.push(currentUser);
+            statusElement.textContent = 'Looking for a partner...';
+            
+            // Simulate server finding a partner (in real app, this would be a WebSocket call)
+            setTimeout(() => {
+                findPartner();
+            }, 1500);
+        }
+
+        // Find a chat partner
+        function findPartner() {
+            // Find available users (not current user and not already paired)
+            const availableUsers = users.filter(user => 
+                user.id !== currentUser.id && user.partner === null
+            );
+
+            if (availableUsers.length > 0) {
+                currentPartner = availableUsers[0];
+                currentUser.partner = currentPartner.id;
+                currentPartner.partner = currentUser.id;
+                
+                statusElement.textContent = `Connected with ${currentPartner.name}`;
+                messageInput.disabled = false;
+                sendButton.disabled = false;
+                disconnectBtn.style.display = 'inline-block';
+                
+                // Add welcome message
+                addMessage(`${currentPartner.name} has joined the chat`, 'received');
+            } else {
+                statusElement.textContent = 'No partners available. Waiting...';
+                setTimeout(() => {
+                    findPartner();
+                }, 2000);
+            }
+        }
+
+        // Disconnect from current chat
+        function disconnect() {
+            if (currentPartner) {
+                addMessage(`${currentPartner.name} has left the chat`, 'received');
+                
+                // Notify partner (in real app, this would be a WebSocket message)
+                if (currentPartner.partner === currentUser.id) {
+                    currentPartner.partner = null;
+                }
+            }
+            
+            currentUser.partner = null;
+            currentPartner = null;
+            
+            statusElement.textContent = 'Looking for a new partner...';
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+            disconnectBtn.style.display = 'none';
+            
+            // Find new partner
+            setTimeout(() => {
+                findPartner();
+            }, 1000);
+        }
+
+        // Add a message to the chat area
+        function addMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', type);
+            messageDiv.textContent = text;
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Send a message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message === '') return;
+            
+            addMessage(message, 'sent');
+            messageInput.value = '';
+            
+            // Simulate partner response (in real app, this would be sent via WebSocket)
+            if (currentPartner) {
+                setTimeout(() => {
+                    const responses = [
+                        "Interesting!",
+                        "I see what you mean.",
+                        "Tell me more about that.",
+                        "I hadn't thought of it that way.",
+                        "That's a good point.",
+                        "What else is on your mind?",
+                        "I agree with you.",
+                        "Why do you think that?"
+                    ];
+                    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                    addMessage(randomResponse, 'received');
+                }, 1000 + Math.random() * 2000);
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        disconnectBtn.addEventListener('click', disconnect);
+
+        // Initialize
+        connectToChat();
+    </script>
+</body>
+</html>
